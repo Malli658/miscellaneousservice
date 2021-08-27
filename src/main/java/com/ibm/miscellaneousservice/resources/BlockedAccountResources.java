@@ -5,6 +5,9 @@ import java.net.URI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.googlecode.jmapper.JMapper;
+import com.ibm.miscellaneousservice.assembler.BlockedAccountAssembler;
 import com.ibm.miscellaneousservice.dto.BlockedUserDTO;
+import com.ibm.miscellaneousservice.dto.model.BlockedAccountModel;
 import com.ibm.miscellaneousservice.model.BlockedAccount;
 import com.ibm.miscellaneousservice.services.BlockedAccountService;
 
@@ -27,6 +32,11 @@ public class BlockedAccountResources {
 	
 	@Autowired
 	private BlockedAccountService service;
+	
+	@Autowired
+    private PagedResourcesAssembler<BlockedAccount> pagedResourcesAssembler;
+	@Autowired
+	private BlockedAccountAssembler blockedAccountAssembler;
 	
 	@PostMapping(value="/save/blocked")
 	public ResponseEntity<Object> save(@RequestBody BlockedUserDTO dto){
@@ -38,9 +48,11 @@ public class BlockedAccountResources {
 	}
 	
 	@GetMapping(value="/get")
-	public ResponseEntity<Page<BlockedAccount>>  getBlockedAccounts(@RequestParam Long userId,@RequestParam Pageable pageble){
+	public ResponseEntity<PagedModel<BlockedAccountModel>>  getBlockedAccounts(@RequestParam Long userId,@PageableDefault(value = 30)Pageable pageble){
 		Page<BlockedAccount> result=service.getBlockedAccount(userId, pageble);
-		return new ResponseEntity<>(result,HttpStatus.OK);
+		PagedModel<BlockedAccountModel> collModel = pagedResourcesAssembler
+                .toModel(result, blockedAccountAssembler);
+		return new ResponseEntity<>(collModel,HttpStatus.OK);
 	}
 	
 	@DeleteMapping(value="/unblock")
